@@ -1,0 +1,628 @@
+/* ==========================================================================
+   style.css - shared stylesheet for BOTH pages (index.html and edit.html)
+
+   Look: keeps the original royal blue + yellow colours, but borrows layout
+   ideas from Bulbagarden/Bulbapedia: a header bar with a Poke Ball, a tab-style
+   nav strip, rounded "roundy" boxes with title bars, coloured type badges,
+   and striped tables.
+
+   Sections:
+     1. Colours and page basics
+     2. Header, nav and footer
+     3. Cards (the rounded boxes)
+     4. Forms: labels, inputs, buttons, validation messages
+     5. Type badges and sprite bubbles
+     6. Team table
+     7. Two-column layout + Kalos map + encounter list
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. COLOURS AND PAGE BASICS
+   Change a colour here and it changes everywhere it is used.
+   ========================================================================== */
+:root {
+    --blue: royalblue;       /* page background */
+    --navy: #12246e;         /* dark blue for bars and text on light buttons */
+    --navy-light: #22399f;   /* top of the navy gradients */
+    --navy-dark: #0c1a66;    /* bottom of the navy gradients */
+    --gold: #ffd93b;         /* borders and highlights */
+    --yellow: yellow;        /* headings and table text (same as the old design) */
+    --panel: rgba(6, 16, 80, .30); /* dark see-through fill inside cards */
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    color: var(--yellow);
+    background-color: var(--blue);
+    /* soft light patch in the top-left corner so the blue isn't completely flat */
+    background-image: radial-gradient(circle at 15% -10%, rgba(255, 255, 255, .22), transparent 45%);
+    background-attachment: fixed;
+}
+
+/* Centered content container. edit.html adds .wrap-narrow to make it slimmer */
+.wrap {
+    max-width: 1500px;
+    margin: 24px auto;
+    padding: 0 20px;
+}
+
+.wrap-narrow {
+    max-width: 560px;
+}
+
+
+/* ==========================================================================
+   2. HEADER, NAV AND FOOTER
+   ========================================================================== */
+.site-header {
+    background: linear-gradient(180deg, var(--navy-light), var(--navy-dark));
+    border-bottom: 4px solid var(--gold);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .35);
+}
+
+.site-header-inner {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.site-header h1 {
+    margin: 0;
+    color: var(--yellow);
+    font-size: 1.8rem;
+    text-shadow: 0 2px 0 rgba(0, 0, 0, .4);
+}
+
+.tagline {
+    margin: 2px 0 0;
+    color: #dbe4ff;
+    font-size: .9rem;
+    font-weight: normal;
+}
+
+/* The Poke Ball logo, drawn with pure CSS (no image file needed) */
+.pokeball {
+    position: relative;
+    flex: none;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 3px solid #111;
+    /* red top half, black band, white bottom half */
+    background: linear-gradient(#e53935 0 44%, #111 44% 56%, #fff 56%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .4);
+}
+
+/* the little round button in the middle */
+.pokeball::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #111;
+}
+
+/* Tab-style navigation strip under the header */
+.site-nav {
+    background: #0a1550;
+    border-bottom: 1px solid rgba(255, 255, 255, .15);
+}
+
+.site-nav-inner {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.site-nav a {
+    color: #fff;
+    text-decoration: none;
+    padding: 9px 16px;
+    font-size: .95rem;
+    border-radius: 8px 8px 0 0;
+}
+
+.site-nav a:hover,
+.site-nav a:focus-visible {
+    background: var(--gold);
+    color: var(--navy);
+    outline: none;
+}
+
+.site-footer {
+    max-width: 1500px;
+    margin: 30px auto 20px;
+    padding: 0 20px;
+    color: #dbe4ff;
+    font-size: .8rem;
+    font-weight: normal;
+    text-align: center;
+}
+
+
+/* ==========================================================================
+   3. CARDS (rounded boxes with a navy title bar)
+   ========================================================================== */
+.card {
+    background: var(--panel);
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    margin-bottom: 20px;
+    overflow: hidden; /* keeps the title bar inside the rounded corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .25);
+}
+
+.card-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, var(--navy-light), var(--navy-dark));
+    border-bottom: 2px solid var(--gold);
+    color: var(--yellow);
+    font-size: 1.15rem;
+}
+
+.card-body {
+    padding: 16px;
+}
+
+/* Section headings inside cards (e.g. "Pokemon at route 1") */
+h3 {
+    color: var(--yellow);
+}
+
+/* Jump links from the nav land just below the top of the screen */
+[id] {
+    scroll-margin-top: 12px;
+}
+
+
+/* ==========================================================================
+   4. FORMS: LABELS, INPUTS, BUTTONS, VALIDATION MESSAGES
+   ========================================================================== */
+label {
+    display: block;
+    margin-top: 10px;
+    color: var(--yellow);
+    font-size: .9rem;
+}
+
+input,
+select {
+    width: 100%;
+    margin: 4px 0;
+    padding: 9px 10px;
+    border: 2px solid #1a2f8a;
+    border-radius: 8px;
+    background: #fff;
+    color: #111;
+    font: normal 1rem Arial, sans-serif;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(255, 217, 59, .45);
+}
+
+/* Border colours set by form-check.js while you type */
+input.input-error {
+    border-color: #ff5252;
+    background: #fff5f5;
+}
+
+input.input-warn {
+    border-color: var(--gold);
+}
+
+input.input-ok {
+    border-color: #3ddc84;
+}
+
+/* The message line that form-check.js puts under each input */
+.field-msg {
+    margin: 2px 0 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: .85rem;
+    font-weight: normal;
+    line-height: 1.5;
+}
+
+.field-msg:empty {
+    display: none; /* nothing to say = take no space */
+}
+
+.field-msg.error {
+    background: #c62828;
+    color: #fff;
+}
+
+.field-msg.warn {
+    background: var(--gold);
+    color: #3b2f00;
+}
+
+.field-msg.ok {
+    background: #1b7f3b;
+    color: #fff;
+}
+
+.field-msg.info {
+    background: rgba(255, 255, 255, .2);
+    color: #fff;
+}
+
+/* "Did you mean [Fairy]?" buttons inside a message */
+.suggest-btn {
+    margin: 0 0 0 6px;
+    padding: 1px 10px;
+    border: 1px solid var(--navy);
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: none;
+    color: var(--navy);
+    font-size: .85rem;
+}
+
+/* Main buttons: gold pill with a little 3D "press" effect */
+button {
+    margin-top: 6px;
+    padding: 9px 18px;
+    border: 2px solid #7a5b00;
+    border-radius: 999px;
+    background: linear-gradient(#ffe766, #f5b800);
+    box-shadow: 0 2px 0 #7a5b00;
+    color: #3a2a00;
+    font: bold .95rem Arial, sans-serif;
+    cursor: pointer;
+    transition: filter .15s;
+}
+
+button:hover {
+    filter: brightness(1.08);
+}
+
+button:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+button:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+}
+
+button:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
+.btn-secondary {
+    border-color: #1a2f8a;
+    background: linear-gradient(#fff, #cfd8ff);
+    box-shadow: 0 2px 0 #1a2f8a;
+    color: var(--navy);
+}
+
+.btn-danger {
+    border-color: #7a1010;
+    background: linear-gradient(#ff7a7a, #d32f2f);
+    box-shadow: 0 2px 0 #7a1010;
+    color: #fff;
+}
+
+/* Smaller buttons for the Edit / Delete buttons inside table rows */
+.btn-small {
+    margin: 0 6px 0 0;
+    padding: 6px 14px;
+}
+
+/* Error box (e.g. "Team 1 already has 6 pokemon", "No pokemon found").
+   :not(.field-msg) keeps it off the small per-field messages above. */
+.error:not(.field-msg) {
+    margin: 10px 0 0;
+    padding: 8px 12px;
+    border-left: 5px solid #d32f2f;
+    border-radius: 8px;
+    background: #fff1f1;
+    color: #a01818;
+    font-weight: bold;
+}
+
+.error:empty {
+    display: none;
+}
+
+/* Result of the PokeAPI search box: sprite on the left, details on the right */
+#searchResult {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10px;
+    color: var(--yellow);
+    line-height: 1.6;
+}
+
+
+/* ==========================================================================
+   5. TYPE BADGES AND SPRITE BUBBLES
+   ========================================================================== */
+
+/* Coloured pill for a pokemon type. Colours are the classic Bulbapedia ones. */
+.type-badge {
+    display: inline-block;
+    min-width: 58px;
+    margin: 2px 4px 2px 0;
+    padding: 2px 8px;
+    border: 1px solid rgba(0, 0, 0, .35);
+    border-radius: 6px;
+    background: #777; /* fallback if a type isn't recognised */
+    color: #fff;
+    font-size: .85rem;
+    text-align: center;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, .6);
+}
+
+.type-normal   { background: #a8a878; }
+.type-fire     { background: #f08030; }
+.type-water    { background: #6890f0; }
+.type-electric { background: #f8d030; }
+.type-grass    { background: #78c850; }
+.type-ice      { background: #98d8d8; }
+.type-fighting { background: #c03028; }
+.type-poison   { background: #a040a0; }
+.type-ground   { background: #e0c068; }
+.type-flying   { background: #a890f0; }
+.type-psychic  { background: #f85888; }
+.type-bug      { background: #a8b820; }
+.type-rock     { background: #b8a038; }
+.type-ghost    { background: #705898; }
+.type-dragon   { background: #7038f8; }
+.type-dark     { background: #705848; }
+.type-steel    { background: #b8b8d0; }
+.type-fairy    { background: #ee99ac; }
+
+/* Round light "bubble" behind a sprite so it stands out from the blue */
+.sprite-bubble {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 84px;
+    height: 84px;
+    border: 3px solid var(--gold);
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff, #bcd0ff 75%);
+    box-shadow: inset 0 -4px 8px rgba(0, 0, 0, .15), 0 2px 4px rgba(0, 0, 0, .3);
+}
+
+/* SIZE OF THE SPRITES IN THE TEAM TABLE.
+   The pokemondb "home" sprites are ~512px, so they are shrunk here.
+   If you change this, keep .sprite-bubble a bit bigger than the sprite. */
+.sprite-sm {
+    width: 72px;
+    height: 72px;
+    object-fit: contain; /* keeps the sprite's proportions */
+}
+
+/* Bigger bubble for the Search PokeAPI result */
+.sprite-bubble-lg {
+    width: 112px;
+    height: 112px;
+}
+
+.sprite-bubble-lg img {
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+}
+
+
+/* ==========================================================================
+   6. TEAM TABLE
+   ========================================================================== */
+.team-count {
+    margin: 0 0 10px;
+    color: var(--yellow);
+    font-size: .95rem;
+}
+
+/* The dropdown in the "Your Teams" title bar shouldn't stretch to 100% */
+#teamFilter {
+    width: auto;
+    min-width: 170px;
+    margin: 0;
+    padding: 6px 8px;
+}
+
+/* Lets the table scroll sideways on small screens instead of breaking the page */
+.table-scroll {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    color: var(--yellow);
+}
+
+th,
+td {
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, .3);
+    text-align: left;
+    white-space: nowrap; /* keeps "Team 1" etc. on one line instead of wrapping */
+}
+
+thead th {
+    background: linear-gradient(180deg, var(--navy-light), var(--navy-dark));
+    border-bottom: 2px solid var(--gold);
+}
+
+/* Zebra stripes + highlight on hover */
+tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, .07);
+}
+
+tbody tr:hover {
+    background: rgba(255, 217, 59, .15);
+}
+
+/* Message row shown when a team has no pokemon yet */
+.empty-row {
+    padding: 24px;
+    text-align: center;
+    font-weight: normal;
+}
+
+/* Pokemon column: sprite bubble on the left, name to its right */
+.pokemon-cell-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+}
+
+
+/* ==========================================================================
+   7. TWO-COLUMN LAYOUT + KALOS MAP + ENCOUNTER LIST (index.html)
+   ========================================================================== */
+.page-layout {
+    display: grid;
+    grid-template-columns: minmax(500px, 1fr) 560px;
+    /* left column flexes with a floor, map column is a fixed 560px */
+    gap: 32px;
+    align-items: start;
+}
+
+/* min-width: 0 lets the wide table scroll inside its column instead of
+   pushing the map column off the screen */
+.main-col {
+    min-width: 0;
+}
+
+/* Stack into one column on narrow screens instead of squashing everything */
+@media (max-width: 1150px) {
+    .page-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .site-header h1 {
+        font-size: 1.3rem;
+    }
+}
+
+/* Wrapper keeps the map's original 736x552 proportions at any width */
+#mapWrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 736/552;
+    overflow: hidden;
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+}
+
+/* The map image and the invisible SVG layer on top both fill the wrapper exactly */
+#mapWrap>img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    user-select: none;
+}
+
+#mapWrap>svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* A hotspot: invisible until hovered or clicked */
+.hs {
+    fill: transparent;
+    stroke: rgba(16, 40, 63, .5);
+    stroke-width: 1.25;
+    cursor: pointer;
+    pointer-events: all; /* a transparent fill is still clickable */
+}
+
+.hs:hover {
+    fill: rgba(255, 198, 26, .34); /* yellow highlight */
+    stroke: #e0a800;
+    stroke-width: 2.5;
+}
+
+/* The hotspot that was last clicked */
+.hs.active {
+    fill: rgba(124, 58, 237, .36); /* purple highlight */
+    stroke: #6d28d9;
+    stroke-width: 2.5;
+}
+
+/* --- Encounter panel under the map (pokemon found at the clicked spot) --- */
+#encounterPanel {
+    margin-top: 16px;
+}
+
+#encounterTitle {
+    margin: 0 0 4px;
+    text-transform: capitalize;
+}
+
+/* Responsive grid of little white cards, as many 140px+ columns as fit */
+#encounterList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+#encounterList li {
+    padding: 8px;
+    border: 2px solid #1a2f8a;
+    border-radius: 10px;
+    background: #fff;
+    color: #111;
+    text-align: center;
+}
+
+#encounterList .encounter-name {
+    text-transform: capitalize;
+}
+
+#encounterList img {
+    display: block;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+}

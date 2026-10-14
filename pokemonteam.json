@@ -1,0 +1,114 @@
+[
+  {
+    "id": 1789980692446,
+    "team": "Team 1",
+    "nickname": "deez",
+    "pokemon": "Gengar",
+    "type": "Ghost",
+    "ability": "Shadow Tag"
+  },
+  {
+    "id": 1789980820438,
+    "team": "Team 1",
+    "nickname": "bait",
+    "pokemon": "Gardevoir",
+    "type": "Psychic, Fairy",
+    "ability": "Trace"
+  },
+  {
+    "id": 1789981686064,
+    "team": "Team 1",
+    "nickname": "fih",
+    "pokemon": "Gyarados",
+    "type": "Water, Flying",
+    "ability": "Intimidate"
+  },
+  {
+    "id": 1789982020151,
+    "team": "Team 1",
+    "nickname": "G00N",
+    "pokemon": "Obstagoon",
+    "type": "Dark, Normal",
+    "ability": "Reckless"
+  },
+  {
+    "id": 1789982029634,
+    "team": "Team 1",
+    "nickname": "Snek",
+    "pokemon": "Steelix",
+    "type": "Steel, Ground",
+    "ability": "Sand Force"
+  },
+  {
+    "id": 1789982669171,
+    "team": "Team 1",
+    "nickname": "The GOAT",
+    "pokemon": "Haxorus",
+    "type": "Dragon",
+    "ability": "Unnerve"
+  },
+  {
+    "id": 1790142614639,
+    "team": "Team 2",
+    "nickname": "Bullet",
+    "pokemon": "Metagross",
+    "type": "Steel, Psychic",
+    "ability": "Clear Body"
+  },
+  {
+    "id": 1790146859285,
+    "team": "Team 2",
+    "nickname": "Furry",
+    "pokemon": "Lucario",
+    "type": "Fighting, Steel",
+    "ability": "Steadfast"
+  },
+  {
+    "id": 1790412329182,
+    "team": "Team 2",
+    "nickname": "Vynes",
+    "pokemon": "Sceptile",
+    "type": "Grass",
+    "ability": "Overgrown"
+  },
+  {
+    "id": 1790762485027,
+    "team": "Team 3",
+    "nickname": "CrimSON",
+    "pokemon": "Charizard",
+    "type": "Fire, Flying",
+    "ability": "Blaze"
+  },
+  {
+    "id": 1790762559655,
+    "team": "Team 3",
+    "nickname": "bnnuy",
+    "pokemon": "Lopunny-Mega",
+    "type": "Normal, Fighting",
+    "ability": "Scrappy"
+  },
+  {
+    "id": 1791170950170,
+    "team": "Team 3",
+    "nickname": "ME",
+    "pokemon": "Lechonk",
+    "type": "Normal",
+    "ability": "Gluttony"
+  },
+  {
+    "id": 1791171113481,
+    "team": "Team 3",
+    "nickname": "NOT ME",
+    "pokemon": "Aegislash-Shield",
+    "type": "Steel, Ghost",
+    "ability": "Stance Change"
+  },
+  {
+    "id": 1791172587429,
+    "team": "0",
+    "nickname": "NAT",
+    "pokemon": "Charizard-Mega-X",
+    "type": "Fire, Dragon",
+    "ability": "Tough Claws"
+  }
+]
