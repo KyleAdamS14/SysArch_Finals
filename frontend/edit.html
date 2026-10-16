@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Edit Pokemon</title>
+    <!-- Shared stylesheet used by both pages -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="edit-page">
+
+    <!-- ============ HEADER + NAV STRIP (same look as index.html) ============ -->
+    <header>
+        <div class="site-header">
+            <div class="site-header-inner">
+                <span class="pokeball" aria-hidden="true"></span>
+                <div>
+                    <h1>Pokemon Team Tracker</h1>
+                    <p class="tagline">Edit a pokemon on your team</p>
+                </div>
+            </div>
+        </div>
+        <nav class="site-nav">
+            <div class="site-nav-inner">
+                <a href="index.html">&larr; Back to your teams</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="wrap wrap-narrow">
+        <!-- ============ EDIT FORM ============ -->
+        <!-- One input per field of a record. loadRecord() fills these in with the
+             pokemon's current values, and saveChanges() reads them back out.
+             form-check.js adds a message line under each input and checks the
+             values as you type (same checks as the Add form on index.html). -->
+        <section class="card">
+            <h2 class="card-title">Edit Pokemon</h2>
+            <div class="card-body">
+                <label for="team">Team</label>
+                <input type="text" id="team" placeholder="Team Name">
+                <label for="nickname">Nickname</label>
+                <input type="text" id="nickname" placeholder="Nickname">
+                <label for="pokemon">Pokemon</label>
+                <input type="text" id="pokemon" placeholder="Pokemon">
+                <label for="type">Type</label>
+                <input type="text" id="type" placeholder="Type (e.g. Water, Flying)">
+                <label for="ability">Ability</label>
+                <input type="text" id="ability" placeholder="Ability">
+
+                <!-- Save sends the changes to the server; Cancel just goes back to the list -->
+                <button id="saveBtn" onclick="saveChanges()">Save Changes</button>
+                <button class="btn-secondary" onclick="location.href='index.html'">Cancel</button>
+
+                <!-- Any error message (missing id, record not found, save failed) shows here -->
+                <p id="error" class="error"></p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        Pokemon data from PokeAPI &middot; Pokemon is &copy; Nintendo / Game Freak
+    </footer>
+
+    <!-- validate.js = the input rules (also used by server.js); form-check.js = the live checking on the form -->
+    <script src="validate.js"></script>
+    <script src="form-check.js"></script>
+
+    <!-- ============ SCRIPT FOR EDITING ============ -->
+    <script>
+        // Turn on live error checking. Each value is the id of the matching <input> above.
+        const form = setupFormValidation({
+            team: 'team', nickname: 'nickname', pokemon: 'pokemon', type: 'type', ability: 'ability'
+        });
+
+        // getIdFromUrl() - reads "?id=..." from this page's URL so we know which
+        // record to load. index.html links here as edit.html?id=123.
+        function getIdFromUrl() {
+            return new URLSearchParams(window.location.search).get('id');
+        }
+
+        // Read the id once when the page opens; loadRecord() and saveChanges()
+        // both use it.
+        const Id = getIdFromUrl();
+
+        // loadRecord() - fetches the one record (GET /api/pokemon/:id) and fills
+        // the inputs with its current values.
+        async function loadRecord() {
+            // No ?id= in the URL means we don't know what to edit
+            if (!Id) {
+                document.getElementById('error').textContent = 'No record id given.';
+                return;
+            }
+
+            const response = await fetch(`/api/pokemon/${Id}`);
+            // 404 from the server = that id doesn't exist (e.g. already deleted)
+            if (!response.ok) {
+                document.getElementById('error').textContent = 'Record not found.';
+                return;
+            }
+
+            // Copy each saved value into its matching input box
+            const record = await response.json();
+            document.getElementById('team').value = record.team;
+            document.getElementById('nickname').value = record.nickname;
+            document.getElementById('pokemon').value = record.pokemon;
+            document.getElementById('type').value = record.type;
+            document.getElementById('ability').value = record.ability;
+
+            // Check the loaded values right away, so any problem with an old
+            // record (or a type/ability that doesn't match the pokemon) shows up.
+            form.checkAll();
+        }
+
+        // saveChanges() - runs the full form check, PUTs the edited values back
+        // to update the record, then returns to the list.
+        async function saveChanges() {
+            const errorEl = document.getElementById('error');
+            const button = document.getElementById('saveBtn');
+            errorEl.textContent = '';
+
+            if (!Id) {
+                errorEl.textContent = 'No record id given.';
+                return;
+            }
+
+            button.disabled = true; // stops double-clicks
+            try {
+                // validateAll() checks every field (and that the pokemon is real).
+                // If something is wrong the message is already shown under that field.
+                const check = await form.validateAll();
+                if (!check.ok) return;
+
+                // PUT = "replace this record's data". The body is sent as JSON.
+                const response = await fetch(`/api/pokemon/${Id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(check.values) // the cleaned-up values
+                });
+
+                // The server refuses if e.g. the new team already has 6 pokemon;
+                // show its reason.
+                if (!response.ok) {
+                    const result = await response.json().catch(() => ({}));
+                    errorEl.textContent = result.error || 'Could not save changes.';
+                    return;
+                }
+
+                // Success - go back to the team list, which reloads the fresh data
+                location.href = 'index.html';
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // Enter key in any field = Save
+        ['team', 'nickname', 'pokemon', 'type', 'ability'].forEach((id) => {
+            document.getElementById(id).addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') saveChanges();
+            });
+        });
+
+        // Runs when the page opens: fill the form with the record being edited
+        loadRecord();
+    </script>
+
+</body>
+
+</html>

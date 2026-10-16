@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pokemon Team Tracker</title>
+  <!-- One shared stylesheet for both pages (index.html and edit.html) -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="index-page">
+
+  <!-- ============ HEADER + NAV STRIP ============ -->
+  <header>
+    <div class="site-header">
+      <div class="site-header-inner">
+        <span class="pokeball" aria-hidden="true"></span>
+        <div>
+          <h1>Pokemon Team Tracker</h1>
+          <p class="tagline">Build your teams, look up any pokemon, and explore Kalos</p>
+        </div>
+      </div>
+    </div>
+    <!-- These links jump down the page to the section with the matching id -->
+    <nav class="site-nav">
+      <div class="site-nav-inner">
+        <a href="#search">Search</a>
+        <a href="#add">Add Pokemon</a>
+        <a href="#teams">Your Teams</a>
+        <a href="#locator">Map</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <div class="page-layout">
+
+      <!-- ============ LEFT COLUMN: search, add, team list ============ -->
+      <div class="main-col">
+
+        <!-- ============ ONLINE LOOKUP SECTION (PokeAPI) ============ -->
+        <section class="card" id="search">
+          <h2 class="card-title">Search PokeAPI</h2>
+          <div class="card-body">
+            <input type="text" id="searchInput" placeholder="e.g. pikachu" aria-label="Pokemon name to search">
+            <button onclick="searchPokemon()">Search</button>
+            <div id="searchResult"></div>
+          </div>
+        </section>
+
+        <!-- ============ ADD RECORD FORM ============ -->
+        <!-- form-check.js adds a message line under every input below and checks
+             the values as you type (see the setupFormValidation call in the script). -->
+        <section class="card" id="add">
+          <h2 class="card-title">Add to Your Team</h2>
+          <div class="card-body">
+            <label for="team">Team</label>
+            <input type="text" id="team" placeholder="Team name (e.g. Team 0)">
+            <label for="nickname">Nickname</label>
+            <input type="text" id="nickname" placeholder="Nickname (e.g. Richie)">
+            <label for="pokemon">Pokemon</label>
+            <input type="text" id="pokemon" placeholder="Pokemon (e.g. Pikachu)">
+            <label for="type">Type</label>
+            <input type="text" id="type" placeholder="Type (e.g. Electric, or Water, Flying)">
+            <label for="ability">Ability</label>
+            <input type="text" id="ability" placeholder="Ability (e.g. Static)">
+            <button id="addBtn" onclick="addRecord()">Add Record</button>
+            <p id="addError" class="error"></p>
+          </div>
+        </section>
+
+        <!-- ============ TEAM LIST ============ -->
+        <section class="card" id="teams">
+          <h2 class="card-title">
+            Your Teams
+            <select id="teamFilter" onchange="renderTable()" aria-label="Show which team">
+              <option value="__all__">All Teams</option>
+            </select>
+          </h2>
+          <div class="card-body">
+            <p id="teamCount" class="team-count"></p>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Team</th>
+                    <th>Nickname</th>
+                    <th>Pokemon</th>
+                    <th>Type</th>
+                    <th>Ability</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="teamTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ============ RIGHT COLUMN: KALOS MAP ============ -->
+      <div class="map-col">
+        <section class="card" id="locator">
+          <h2 class="card-title">Pokemon Locator</h2>
+          <div class="card-body">
+            <div id="mapWrap">
+              <img id="mapImg" src="kalos-map.png" alt="Map of the Kalos region" width="736" height="552"
+                draggable="false">
+              <svg id="hotspots" viewBox="0 0 736 552" aria-label="Clickable places on the map">
+                <g id="shapes"></g>
+                <g id="halo"></g>
+              </svg>
+            </div>
+
+            <div id="encounterPanel">
+              <h3 id="encounterTitle">Click a spot to see the Pokémon there</h3>
+              <input type="search" id="encounterSearch" placeholder="Filter by name..." disabled
+                aria-label="Filter the pokemon list by name">
+              <ul id="encounterList"></ul>
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    Pokemon data from PokeAPI &middot; sprites from Pokemon Database &middot; Pokemon is &copy; Nintendo / Game Freak
+  </footer>
+
+  <!-- ============ SHARED HELPERS ============ -->
+  <!-- validate.js = the input rules (also used by server.js); form-check.js = the live checking on the forms -->
+  <script src="validate.js"></script>
+  <script src="form-check.js"></script>
+
+  <!-- ============ SCRIPT FOR MAP ============ -->
+  <script>
+    // SVG elements need to be created with this namespace (document.createElementNS),
+    // unlike regular HTML elements — plain createElement() would make broken,
+    // non-rendering "unknown elements" if used for <circle>/<rect> here.
+    const NS = 'http://www.w3.org/2000/svg';
+
+    // SLUGS maps OUR OWN hotspot keys (the ones baked into data.json / the SVG's
+    // data-k attribute) to the REAL location slugs PokeAPI expects in its URLs.
+    // Some of our hotspots (like "lumiose-city") cover several PokeAPI locations
+    // at once, so the value is always an array — one hotspot can pull encounter
+    // data from multiple PokeAPI locations and merge the results together.
+    const SLUGS = {
+      "vaniville-town": ["vaniville-town"],
+      "aquacorde-town": ["aquacorde-town"],
+      "santalune-city": ["santalune-city"],
+      "lumiose-city": ["lumiose-city", "prism-tower", "lysandre-labs", "lumiose-station", "lumiose-gate"],
+      "camphrier-town": ["camphrier-town", "shabboneau-castle"],
+      "cyllage-city": ["cyllage-city"],
+      "ambrette-town": ["ambrette-town", "ambrette-aquarium"],
+      "geosenge-town": ["geosenge-town"],
+      "shalour-city": ["shalour-city", "tower-of-mastery"],
+      "coumarine-city": ["coumarine-city"],
+      "laverre-city": ["laverre-city"],
+      "dendemille-town": ["dendemille-town"],
+      "anistar-city": ["anistar-city"],
+      "couriway-town": ["couriway-town"],
+      "snowbelle-city": ["snowbelle-city"],
+      "kiloude-city": ["kiloude-city"],
+      "pokemon-league": ["kalos-pokemon-league"],
+      "route-1": ["kalos-route-1", "vaniville-pathway"],
+      "route-2": ["kalos-route-2", "avance-trail"],
+      "route-3": ["kalos-route-3", "ouvert-way"],
+      "route-4": ["kalos-route-4", "parterre-way"],
+      "route-5": ["kalos-route-5", "versant-road"],
+      "route-6": ["kalos-route-6", "palais-lane"],
+      "route-7": ["kalos-route-7", "riviere-walk"],
+      "route-8": ["kalos-route-8", "muraille-coast"],
+      "route-9": ["kalos-route-9", "spikes-passage"],
+      "route-10": ["kalos-route-10", "menhir-trail"],
+      "route-11": ["kalos-route-11", "miroir-way"],
+      "route-12": ["kalos-route-12", "fourrage-road"],
+      "route-13": ["kalos-route-13", "lumiose-badlands"],
+      "route-14": ["kalos-route-14", "laverre-nature-trail"],
+      "route-15": ["kalos-route-15", "brun-way"],
+      "route-16": ["kalos-route-16", "melancolie-path"],
+      "route-17": ["kalos-route-17", "mamoswine-road"],
+      "route-18": ["kalos-route-18", "vallee-etroite-way"],
+      "route-19": ["kalos-route-19", "grande-vallee-way"],
+      "route-20": ["kalos-route-20", "winding-woods"],
+      "route-21": ["kalos-route-21", "derniere-way"],
+      "route-22": ["kalos-route-22", "detourner-way"],
+      "santalune-forest": ["santalune-forest"],
+      "connecting-cave": ["connecting-cave"],
+      "glittering-cave": ["glittering-cave"],
+      "reflection-cave": ["reflection-cave"],
+      "parfum-palace": ["parfum-palace"],
+      "kalos-power-plant": ["kalos-power-plant"],
+      "sea-spirits-den": ["sea-spirits-den"],
+      "azure-bay": ["azure-bay"],
+      "poke-ball-factory": ["poke-ball-factory"],
+      "lost-hotel": ["lost-hotel"],
+      "frost-cavern": ["frost-cavern"],
+      "terminus-cave": ["terminus-cave"],
+      "victory-road": ["kalos-victory-road"],
+      "chamber-of-emptiness": ["chamber-of-emptiness"],
+      "pokemon-village": ["pokemon-village"]
+    };
+
+    // Holds whatever encounter list is currently shown, so the search box
+    // (below) can filter it instantly without re-fetching anything.
+    let currentEncounters = [];
+
+    // renderEncounters(list) - takes an array of {name, types, chance, sprite}
+    // and draws it as <li> items inside the #encounterList panel.
+    function renderEncounters(list) {
+      const ul = document.getElementById('encounterList');
+      if (!list.length) {
+        ul.innerHTML = '<li>No encounter data here.</li>';
+        return;
+      }
+      // typeBadges() (defined in the teams script below) turns ["grass", "poison"]
+      // into the same coloured type pills used in the team table.
+      ul.innerHTML = list.map((p) => `
+      <li>
+        <img src="${p.sprite || ''}" alt="${p.name}">
+        <div class="encounter-name">${p.name}</div>
+        <div>${typeBadges(p.types.join(','))}</div>
+        <div>${p.chance}%</div>
+      </li>
+      `).join('');
+    }
+
+    // Live filter: as you type in the "Filter by name..." box, re-render
+    // using only the encounters whose name contains the typed text.
+    // This filters the already-fetched list in memory — no network call.
+    document.getElementById('encounterSearch').addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      const filtered = q ? currentEncounters.filter((p) => p.name.includes(q)) : currentEncounters;
+      renderEncounters(filtered);
+    });
+
+    // initMap() - runs once on page load. Loads the hotspot coordinates from
+    // data.json, draws an invisible clickable SVG shape over each one on top
+    // of the map image, and sets up ONE click listener on the whole <svg>
+    // (event delegation) instead of one listener per hotspot — cheaper, and
+    // works for however many hotspots data.json ends up defining.
+    async function initMap() {
+      const { HOT } = await (await fetch('data.json')).json();
+      const shapesEl = document.getElementById('shapes');
+
+      HOT.forEach((hotspot) => {
+        // Each hotspot's "s" field is a small array describing its shape.
+        // Circle format:    ["c", centerX, centerY, radius]
+        // Rectangle format: ["r", x, y, width, height]
+        // (the first slot is always the shape type, "c" or "r")
+        const shapeData = hotspot.s;
+        const shapeType = shapeData[0];
+        let node;
+
+        if (shapeType === 'c') {
+          const [, centerX, centerY, radius] = shapeData;
+          node = document.createElementNS(NS, 'circle');
+          // cx/cy/r are the actual required SVG attribute names for a <circle> —
+          // they can't be renamed, but the values we're feeding them now have
+          // clear names instead of unlabeled array slots.
+          node.setAttribute('cx', centerX); // center X coordinate
+          node.setAttribute('cy', centerY); // center Y coordinate
+          node.setAttribute('r', radius);   // radius
+        } else {
+          const [, x, y, width, height] = shapeData;
+          node = document.createElementNS(NS, 'rect');
+          node.setAttribute('x', x);
+          node.setAttribute('y', y);
+          node.setAttribute('width', width);
+          node.setAttribute('height', height);
+        }
+
+        node.setAttribute('class', 'hs'); // "hs" = hotspot (styling + click target)
+        node.setAttribute('data-k', hotspot.k); // this shape's location key, used to look up SLUGS
+        shapesEl.appendChild(node);
+      });
+
+      // Single click listener on the parent <svg>, using event delegation:
+      // when any hotspot shape is clicked, e.target is that shape, and we
+      // walk up to find the nearest element with a data-k attribute.
+      document.getElementById('hotspots').addEventListener('click', async (e) => {
+        const clickedHotspot = e.target.closest('[data-k]');
+        if (!clickedHotspot) return; // click landed on empty map space, ignore
+
+        // Visually mark only this hotspot as "active" (clears any previous one)
+        document.querySelectorAll('.hs.active').forEach((x) => x.classList.remove('active'));
+        clickedHotspot.classList.add('active');
+
+        document.getElementById('encounterTitle').textContent = 'Loading...';
+        document.getElementById('encounterSearch').disabled = true;
+
+        const list = await getEncounters(clickedHotspot.dataset.k);
+        currentEncounters = list;
+
+        document.getElementById('encounterTitle').textContent = `Pokemon at ${clickedHotspot.dataset.k.replace(/-/g, ' ')}`;
+        document.getElementById('encounterSearch').disabled = false;
+        document.getElementById('encounterSearch').value = '';
+        renderEncounters(list);
+      });
+    }
+
+    // Caches encounter results per hotspot key, so clicking the same spot
+    // twice doesn't re-hit PokeAPI (which can involve several fetches).
+    const cache = new Map();
+
+    // getEncounters(key) - given one of OUR hotspot keys, returns a sorted
+    // list of {id, name, types, sprite, chance} for pokemon found there.
+    async function getEncounters(key) {
+      if (cache.has(key)) return cache.get(key);
+
+      const slugs = SLUGS[key] || [];
+      // Keyed by pokemon id, so the same pokemon appearing under multiple
+      // slugs (e.g. Lumiose City + Prism Tower) only counts once, keeping
+      // whichever appearance has the higher encounter chance.
+      const merged = new Map();
+
+      for (const slug of slugs) {
+        let location;
+        try {
+          location = await (await fetch(`https://pokeapi.co/api/v2/location/${slug}`)).json();
+        } catch {
+          continue; // bad/renamed slug — skip it, don't blow up the whole lookup
+        }
+
+        // A location can have multiple "areas" (e.g. different floors/sections);
+        // fetch all of them in parallel rather than one-by-one.
+        const areas = await Promise.all(location.areas.map((a) => fetch(a.url).then((r) => r.json())));
+
+        for (const area of areas) {
+          for (const encounter of area.pokemon_encounters) {
+            // We only care about X/Y version encounter data (matches the Kalos map).
+            const xyVersions = encounter.version_details.filter(
+              (v) => v.version.name === "x" || v.version.name === "y"
+            );
+            if (!xyVersions.length) continue;
+
+            // Pull the numeric pokemon id out of its API URL
+            // (e.g. ".../pokemon/25/" -> 25)
+            const pokemonId = Number(encounter.pokemon.url.split("/").filter(Boolean).pop());
+            const bestChance = Math.max(...xyVersions.map((v) => v.max_chance));
+
+            if (!merged.has(pokemonId) || merged.get(pokemonId).chance < bestChance) {
+              merged.set(pokemonId, { name: encounter.pokemon.name, chance: bestChance, url: encounter.pokemon.url });
+            }
+          }
+        }
+      }
+
+      // Second round of fetches: now that we know WHICH pokemon appear here,
+      // fetch each one's own detail page to get its sprite and type(s).
+      const list = await Promise.all(
+        [...merged.entries()].map(async ([id, entry]) => {
+          const pokemonDetails = await (await fetch(entry.url)).json();
+          return {
+            id,
+            name: pokemonDetails.name,
+            types: pokemonDetails.types.map((t) => t.type.name),
+            sprite: pokemonDetails.sprites.front_default,
+            chance: entry.chance,
+          };
+        })
+      );
+
+      list.sort((a, b) => b.chance - a.chance); // highest encounter chance first
+      cache.set(key, list);
+      return list;
+    }
+
+    initMap();
+  </script>
+
+  <!-- ============ SCRIPT FOR TEAMS ============ -->
+  <script>
+    const V = window.PokemonValidate; // shared rules + helpers from validate.js
+    const TEAM_LIMIT = 6;
+    let allRecords = []; // cached copy of every record, so filtering doesn't need a refetch
+
+    // Turn on live error checking for the Add form. Each value is the id of the
+    // matching <input> above. addForm.validateAll() is used inside addRecord().
+    const addForm = setupFormValidation({
+      team: 'team', nickname: 'nickname', pokemon: 'pokemon', type: 'type', ability: 'ability'
+    });
+
+    // typeBadges("Psychic, Fairy") - returns the HTML for one coloured pill per
+    // type. The pill's colour comes from the .type-psychic / .type-fairy ... rules
+    // in style.css. Text is escaped first so saved data can't inject HTML.
+    function typeBadges(typeString) {
+      return V.parseTypes(typeString).map((t) => {
+        const known = V.POKEMON_TYPES.find((x) => x.toLowerCase() === t.toLowerCase());
+        const cls = known ? 'type-' + known.toLowerCase() : '';
+        return `<span class="type-badge ${cls}">${V.escapeHtml(known || t)}</span>`;
+      }).join('');
+    }
+
+    // loadTeam() - fetches every saved record (GET /api/pokemon), caches it,
+    // rebuilds the team filter dropdown, then renders the currently selected team.
+    async function loadTeam() {
+      const response = await fetch('/api/pokemon');
+      allRecords = await response.json();
+      populateTeamFilter();
+      renderTable();
+    }
+
+    // populateTeamFilter() - scans allRecords for distinct team names and
+    // fills the dropdown with them, keeping "All Teams" as the first option
+    // and preserving whatever the user currently has selected if it still exists.
+    function populateTeamFilter() {
+      const select = document.getElementById('teamFilter');
+      const previousValue = select.value;
+
+      const teamNames = [...new Set(allRecords.map(r => r.team))].sort();
+
+      select.innerHTML = '<option value="__all__">All Teams</option>';
+      teamNames.forEach(team => {
+        const option = document.createElement('option');
+        option.value = team;
+        option.textContent = `${team} (${allRecords.filter(r => r.team === team).length}/${TEAM_LIMIT})`;
+        select.appendChild(option);
+      });
+
+      // Restore previous selection if that team still has records
+      if ([...select.options].some(o => o.value === previousValue)) {
+        select.value = previousValue;
+      }
+    }
+
+    // spriteUrl(name) - builds the pokemondb sprite image URL for a given
+    // pokemon name. normalizePokemonName turns "Mr. Mime" into "mr-mime",
+    // which is the spelling the sprite site uses.
+    function spriteUrl(name) {
+      return `https://img.pokemondb.net/sprites/home/normal/${V.normalizePokemonName(name)}.png`;
+    }
+
+    // renderTable() - draws the table body using only the records that match
+    // the currently selected team filter (or everything, if "All Teams").
+    // Every saved value goes through V.escapeHtml() before being put into the
+    // page, so a nickname like <b>hi</b> shows as text instead of running as HTML.
+    function renderTable() {
+      const selected = document.getElementById('teamFilter').value;
+      const visible = selected === '__all__'
+        ? allRecords
+        : allRecords.filter(r => r.team === selected);
+
+      const tbody = document.getElementById('teamTableBody');
+      tbody.innerHTML = '';
+
+      // Nothing to show yet: one friendly message row instead of an empty table
+      if (!visible.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-row">No pokemon here yet. Add one with the form above!</td></tr>';
+      }
+
+      visible.forEach((record) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+        <td>${V.escapeHtml(record.team)}</td>
+        <td>${V.escapeHtml(record.nickname)}</td>
+        <td class="pokemon-cell">
+          <!-- the bubble holds the small sprite; if the image fails to load the whole bubble is hidden -->
+          <div class="pokemon-cell-inner">
+            <div class="sprite-bubble">
+              <img src="${spriteUrl(record.pokemon)}" alt="${V.escapeHtml(record.pokemon)}" class="sprite-sm" onerror="this.parentElement.style.display='none'">
+            </div>
+            <span>${V.escapeHtml(record.pokemon)}</span>
+          </div>
+        </td>
+        <td>${typeBadges(record.type)}</td>
+        <td>${V.escapeHtml(record.ability)}</td>
+        <td class="actions">
+          <button class="btn-small" onclick="location.href='edit.html?id=${record.id}'">Edit</button>
+          <button class="btn-small btn-danger" onclick="removeRecord(${record.id})">Delete</button>
+        </td>
+      `;
+        tbody.appendChild(row);
+      });
+
+      // Show a running count / full warning for the selected team.
+      // This runs ONCE per renderTable() call (outside the forEach above).
+      const countEl = document.getElementById('teamCount');
+      if (selected === '__all__') {
+        countEl.textContent = `${allRecords.length} pokemon across ${new Set(allRecords.map(r => r.team)).size} team(s)`;
+      } else {
+        const count = visible.length;
+        countEl.textContent = count >= TEAM_LIMIT
+          ? `"${selected}" is full (${count}/${TEAM_LIMIT})`
+          : `"${selected}": ${count}/${TEAM_LIMIT}`;
+      }
+    }
+
+    // addRecord() - runs the full form check (addForm.validateAll(), which also
+    // confirms the pokemon is real via /api/lookup), then POSTs a new record.
+    // The server checks everything again; if it still rejects the record
+    // (e.g. that team already has 6) its own error message is shown.
+    async function addRecord() {
+      const errorEl = document.getElementById('addError');
+      const button = document.getElementById('addBtn');
+      errorEl.textContent = '';
+      button.disabled = true; // stops double-clicks from adding the pokemon twice
+
+      try {
+        const check = await addForm.validateAll();
+        if (!check.ok) return; // the problems are already shown under each field
+
+        const response = await fetch('/api/pokemon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(check.values) // the cleaned-up values
+        });
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          // Show the server's actual reason (e.g. "Team Red already has 6 pokemon")
+          errorEl.textContent = result.error || 'Could not add record.';
+          return;
+        }
+
+        document.getElementById('nickname').value = '';
+        document.getElementById('pokemon').value = '';
+        document.getElementById('type').value = '';
+        document.getElementById('ability').value = '';
+        // Team name is left in place on purpose, since you're likely adding
+        // several pokemon to the same team in a row.
+        addForm.reset(); // clear the green/red field messages
+
+        loadTeam();
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    // removeRecord(id) - DELETEs the record, then refreshes.
+    async function removeRecord(id) {
+      if (!confirm('Delete this record?')) return;
+      await fetch(`/api/pokemon/${id}`, { method: 'DELETE' });
+      loadTeam();
+    }
+
+    // searchPokemon(nameOverride) - calls our own /api/lookup?name=... route
+    // (which relays to the real PokeAPI) and shows the sprite, name, type(s),
+    // height and abilities. If the name isn't found, the server sends back
+    // close matches, shown as "Did you mean...?" buttons. nameOverride is used
+    // by those buttons to search for the suggested name.
+    async function searchPokemon(nameOverride) {
+      const input = document.getElementById('searchInput');
+      if (typeof nameOverride === 'string') input.value = nameOverride;
+
+      const raw = input.value.trim();
+      const resultEl = document.getElementById('searchResult');
+      resultEl.innerHTML = '';
+      if (!raw) return;
+
+      // Quick offline check of the name's shape before bothering the server
+      const formatError = V.validatePokemonName(raw);
+      if (formatError) {
+        resultEl.innerHTML = `<div class="error">${V.escapeHtml(formatError)}</div>`;
+        return;
+      }
+
+      resultEl.textContent = 'Searching...';
+
+      let response;
+      try {
+        response = await fetch(`/api/lookup?name=${encodeURIComponent(V.normalizePokemonName(raw))}`);
+      } catch {
+        resultEl.innerHTML = '<div class="error">Could not reach the server.</div>';
+        return;
+      }
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        if (response.status !== 404) {
+          resultEl.innerHTML = `<div class="error">${V.escapeHtml(data.error || 'Something went wrong.')}</div>`;
+          return;
+        }
+        const suggestions = (data.suggestions || []).map((s) =>
+          `<button type="button" class="suggest-btn" onclick="searchPokemon('${V.escapeHtml(s)}')">${V.escapeHtml(V.titleCase(s))}</button>`
+        ).join('');
+        resultEl.innerHTML = `<div class="error">No pokemon found named "${V.escapeHtml(raw)}".${suggestions ? ' Did you mean ' + suggestions + '?' : ''}</div>`;
+        return;
+      }
+
+      // Safety net: if /api/lookup ever responds without an ability field, fall
+      // back to an empty string instead of letting "undefined" flow through.
+      const abilityValue = data.ability || '';
+      const abilityList = (data.abilities || []).map(V.titleCase).join(', ');
+      const shownName = V.escapeHtml(V.titleCase(data.name));
+
+      resultEl.innerHTML = `
+      <div class="sprite-bubble sprite-bubble-lg">
+        <img src="https://img.pokemondb.net/sprites/home/normal/${V.escapeHtml(data.name)}.png"
+             onerror="this.parentElement.style.display='none'" alt="${shownName}">
+      </div>
+      <div>
+        <strong>${shownName}</strong><br>
+        ${typeBadges(data.type)}<br>
+        Height: ${data.height} m<br>
+        Abilities: ${V.escapeHtml(abilityList)}<br>
+        <button onclick="useSearchResult('${V.escapeHtml(data.name)}', '${V.escapeHtml(data.type)}', '${V.escapeHtml(abilityValue)}')">Use in Add Form</button>
+      </div>
+    `;
+    }
+
+    // useSearchResult(name, type, ability) - copies a searched pokemon's
+    // name/type/first-ability into the Add form, then runs the form check so
+    // the fields show their green "looks good" state. Ability names come back
+    // hyphenated (e.g. "shadow-tag"); titleCase turns that into "Shadow Tag".
+    // ability can be an empty string, in which case the field is left blank.
+    function useSearchResult(name, type, ability) {
+      document.getElementById('pokemon').value = V.titleCase(name).replace(/ /g, '-');
+      document.getElementById('type').value = V.normalizeTypes(type);
+      document.getElementById('ability').value = V.titleCase(ability);
+      addForm.checkAll();
+      document.getElementById('nickname').focus();
+    }
+
+    // Pressing Enter in the search box searches, and Enter in any Add-form
+    // field submits the form (same as clicking the buttons).
+    document.getElementById('searchInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') searchPokemon();
+    });
+    ['team', 'nickname', 'pokemon', 'type', 'ability'].forEach((id) => {
+      document.getElementById(id).addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addRecord();
+      });
+    });
+
+    loadTeam();
+  </script>
+
+  <footer style="text-align:center;padding:16px;font-size:.85rem;opacity:.7">
+    Pokemon Team Tracker &middot; <span id="buildLabel">Build: ...</span>
+  </footer>
+  <script>
+    // Shows which build is live (version.json is written when the frontend image is built)
+    fetch('version.json', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((v) => { document.getElementById('buildLabel').textContent = 'Build ' + v.build; })
+      .catch(() => { document.getElementById('buildLabel').textContent = 'Build unknown'; });
+  </script>
+
+</body>
+
+</html>
