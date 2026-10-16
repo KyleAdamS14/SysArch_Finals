@@ -626,3 +626,16 @@ tbody tr:hover {
     height: 64px;
     margin: 0 auto;
 }
+
+   /* Build badge: makes the live build number obvious during the demo */
+   .build-badge {
+       display: inline-block;
+       margin-top: 6px;
+       padding: 2px 12px;
+       border: 2px solid var(--gold);
+       border-radius: 999px;
+       background: var(--panel);
+       color: var(--yellow);
+       font-size: .9rem;
+       font-weight: bold;
+   }
