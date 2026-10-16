@@ -56,8 +56,8 @@ pipeline {
           for i in $(seq 1 12); do
             if docker compose exec -T team-api wget -qO- http://localhost:3000/health \
             && docker compose exec -T lookup-service wget -qO- http://localhost:4000/health \
-            && docker compose exec -T proxy wget -qO- http://localhost:8080/api/pokemon > /dev/null \
-            && docker compose exec -T proxy wget -qO- http://localhost:8080/version.json; then
+            && docker compose exec -T proxy wget -qO- http://127.0.0.1:8080/api/pokemon > /dev/null \
+            && docker compose exec -T proxy wget -qO- http://127.0.0.1:8080/version.json; then
               echo; echo "Smoke test passed"; exit 0
             fi
             echo "Waiting for services..."; sleep 5
@@ -69,7 +69,7 @@ pipeline {
   }
 
   post {
-    success { echo "Pokemon Team Tracker build ${TAG} is live at http://localhost:8080" }
+    success { echo "Pokemon Team Tracker build ${TAG} is live at http://127.0.0.1:8080" }
     failure { echo "Build ${TAG} failed. See the stage logs. To roll back run: TAG=<previous build number> docker compose -p pokemonteam up -d --no-build" }
     always  { sh 'rm -f .env' }   // never leave secrets in the workspace
   }
