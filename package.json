@@ -1,27 +1,16 @@
 {
-  "name": "pokemon-team-app",
+  "name": "lookup-service",
   "version": "1.0.0",
-  "description": "CRUD app with PokeAPI integration for lab exam",
-  "main": "server.js",
+  "description": "Relay to PokeAPI with typo suggestions",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "test": "node --test tests/*.test.js"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "axios": "^1.20.0",
+    "axios": "^1.7.9",
     "cors": "^2.8.6",
     "express": "^5.2.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/KyleAdamS14/Integrative_API-finals.git"
-  },
-  "bugs": {
-    "url": "https://github.com/KyleAdamS14/Integrative_API-finals/issues"
-  },
-  "homepage": "https://github.com/KyleAdamS14/Integrative_API-finals#readme"
+  }
 }

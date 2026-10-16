@@ -1,0 +1,73 @@
+# Whole application stack. Start with:  docker compose up -d --build
+# TAG is the image version (Jenkins sets it to the build number).
+services:
+  proxy:
+    build: ./proxy
+    image: pokemonteam/proxy:${TAG:-latest}
+    ports:
+      - "8080:8080"            # the ONLY published port: open http://localhost:8080
+    depends_on:
+      frontend:
+        condition: service_healthy
+      team-api:
+        condition: service_healthy
+      lookup-service:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [pokemon-net]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        BUILD_NUMBER: ${TAG:-dev}   # shown in the page footer
+    image: pokemonteam/frontend:${TAG:-latest}
+    restart: unless-stopped
+    networks: [pokemon-net]
+
+  team-api:
+    build:
+      context: ./team-api
+      target: production
+    image: pokemonteam/team-api:${TAG:-latest}
+    environment:
+      DB_HOST: db
+      DB_NAME: pokemonteam
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [pokemon-net]
+
+  lookup-service:
+    build:
+      context: ./lookup-service
+      target: production
+    image: pokemonteam/lookup-service:${TAG:-latest}
+    restart: unless-stopped
+    networks: [pokemon-net]
+
+  db:
+    build: ./db
+    image: pokemonteam/db:${TAG:-latest}
+    environment:
+      POSTGRES_DB: pokemonteam
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data   # named volume: data survives redeploys
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d pokemonteam"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks: [pokemon-net]                # NOT published to the host
+
+volumes:
+  db-data:
+
+networks:
+  pokemon-net:
