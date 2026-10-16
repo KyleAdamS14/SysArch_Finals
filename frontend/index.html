@@ -19,6 +19,7 @@
         <div>
           <h1>Pokemon Team Tracker</h1>
           <p class="tagline">Build your teams, look up any pokemon, and explore Kalos</p>
+             <span class="build-badge" id="buildBadge">Build ...</span>
         </div>
       </div>
     </div>
@@ -636,10 +637,14 @@
   </footer>
   <script>
     // Shows which build is live (version.json is written when the frontend image is built)
-    fetch('version.json', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((v) => { document.getElementById('buildLabel').textContent = 'Build ' + v.build; })
-      .catch(() => { document.getElementById('buildLabel').textContent = 'Build unknown'; });
+      .then((v) => {
+     document.getElementById('buildLabel').textContent = 'Build ' + v.build;
+     document.getElementById('buildBadge').textContent = 'Build ' + v.build;
+   })
+   .catch(() => {
+     document.getElementById('buildLabel').textContent = 'Build unknown';
+     document.getElementById('buildBadge').textContent = 'Build unknown';
+   });
   </script>
 
 </body>
