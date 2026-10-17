@@ -47,9 +47,31 @@ function createApp(store) {
       res.status(500).json({ error: "Server error" });
     });
 
-  // READ ALL
+  // READ ALL (optional filter: /api/pokemon?team=Team 1, case-insensitive)
   app.get("/api/pokemon", wrap(async (req, res) => {
-    res.json(await store.list());
+    const records = await store.list();
+    const team = typeof req.query.team === "string" ? req.query.team.trim() : "";
+    if (!team) return res.json(records);
+    res.json(records.filter((r) => r.team.toLowerCase() === team.toLowerCase()));
+  }));
+
+  // TEAM SUMMARY: one row per team with its size and free slots.
+  // Must be declared BEFORE "/api/pokemon/:id", or "teams" would be read as an id.
+  app.get("/api/pokemon/teams", wrap(async (req, res) => {
+    const records = await store.list();
+    const byTeam = new Map(); // lower-case name -> summary (keeps the first spelling seen)
+    for (const r of records) {
+      const key = r.team.toLowerCase();
+      if (!byTeam.has(key)) byTeam.set(key, { team: r.team, count: 0 });
+      byTeam.get(key).count++;
+    }
+    const teams = [...byTeam.values()].map((t) => ({
+      ...t,
+      limit: TEAM_LIMIT,
+      slotsLeft: Math.max(TEAM_LIMIT - t.count, 0),
+      full: t.count >= TEAM_LIMIT,
+    }));
+    res.json(teams);
   }));
 
   // CREATE
@@ -103,6 +125,23 @@ function createApp(store) {
     if (!removed) return res.status(404).json({ error: "Record not found" });
     res.status(204).send();
   }));
+
+  // Unknown route -> JSON 404 (instead of Express's default HTML page)
+  app.use((req, res) => {
+    res.status(404).json({ error: "Route not found" });
+  });
+
+  // Error handler: bad JSON body -> 400, anything else -> 500, always JSON
+  app.use((err, req, res, next) => {
+    if (err && err.type === "entity.parse.failed") {
+      return res.status(400).json({ error: "Request body is not valid JSON" });
+    }
+    if (err && err.type === "entity.too.large") {
+      return res.status(413).json({ error: "Request body is too large" });
+    }
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
+  });
 
   return app;
 }

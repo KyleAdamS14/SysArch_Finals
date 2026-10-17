@@ -5,8 +5,16 @@ CREATE TABLE IF NOT EXISTS pokemon (
   nickname VARCHAR(20) NOT NULL,
   pokemon  VARCHAR(30) NOT NULL,
   type     VARCHAR(40) NOT NULL,
-  ability  VARCHAR(30) NOT NULL
+  ability  VARCHAR(30) NOT NULL,
+  -- Data-integrity rules enforced by the database itself (second line of defence
+  -- behind the API validation): no blank values, even if someone bypasses the API.
+  CONSTRAINT pokemon_team_not_blank     CHECK (length(trim(team))     > 0),
+  CONSTRAINT pokemon_nickname_not_blank CHECK (length(trim(nickname)) > 0),
+  CONSTRAINT pokemon_name_not_blank     CHECK (length(trim(pokemon))  > 0)
 );
+
+-- Speeds up the team filter / team summary queries (case-insensitive team lookup)
+CREATE INDEX IF NOT EXISTS idx_pokemon_team ON pokemon (lower(team));
 
 -- Seed data: the records from the original pokemonteam.json
 INSERT INTO pokemon (team, nickname, pokemon, type, ability) VALUES
