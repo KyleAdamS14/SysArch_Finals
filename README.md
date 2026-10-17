@@ -88,8 +88,8 @@ Jenkins mounts `/var/run/docker.sock` and runs as root. This gives Jenkins full 
 ## Team
 | Role | Member |
 |---|---|
-| Project Lead / Scrum Master | _fill in_ |
-| DevOps / CI-CD Engineer | _fill in_ |
-| Infrastructure Engineer | _fill in_ |
-| Backend and Database Engineer | _fill in_ |
-| Frontend, QA, and Documentation Lead | _fill in_ |
+| Project Lead / Scrum Master | Santos, Kyle Adam P. |
+| DevOps / CI-CD Engineer | Aguila, Thiro S. |
+| Infrastructure Engineer | Serrano, Jondy C. |
+| Backend and Database Engineer | Peralta, Zhyrus O. |
+| Frontend, QA, and Documentation Lead | Turla, Jhoel Renz S. |
