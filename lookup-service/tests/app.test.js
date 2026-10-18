@@ -21,6 +21,7 @@ const fakeHttp = {
 async function start() {
   const server = await new Promise((resolve) => {
     const s = createApp(fakeHttp).listen(0, () => resolve(s));
+    s.unref(); // don't keep the process alive just for this server (tests will exit when done)
   });
   const base = `http://127.0.0.1:${server.address().port}`;
   return { get: (p) => fetch(base + p).then(async (r) => ({ status: r.status, body: await r.json() })), close: () => server.close() };

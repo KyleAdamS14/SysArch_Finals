@@ -8,6 +8,7 @@ async function start(initial) {
   const app = createApp(createMemoryStore(initial));
   const server = await new Promise((resolve) => {
     const s = app.listen(0, () => resolve(s));
+    s.unref(); // don't keep the process alive just for this server (tests will exit when done)
   });
   const base = `http://127.0.0.1:${server.address().port}`;
   const call = async (method, path, body) => {

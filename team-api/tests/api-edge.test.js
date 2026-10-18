@@ -6,6 +6,7 @@ const createMemoryStore = require("./memory-store");
 async function start(store = createMemoryStore()) {
   const server = await new Promise((resolve) => {
     const s = createApp(store).listen(0, () => resolve(s));
+    s.unref(); // don't keep the process alive just for this server (tests will exit when done)
   });
   const base = `http://127.0.0.1:${server.address().port}`;
   const call = async (method, path, body, raw) => {
