@@ -37,7 +37,7 @@ test("POST creates a cleaned record and GET lists it", async () => {
   const { call, close } = await start();
   const created = await call("POST", "/api/pokemon", valid);
   assert.strictEqual(created.status, 201);
-  assert.strictEqual(created.body.type, "electric");
+  assert.strictEqual(created.body.type, "Electric");
   assert.strictEqual(created.body.ability, "Static");
   const list = await call("GET", "/api/pokemon");
   assert.strictEqual(list.body.length, 1);
